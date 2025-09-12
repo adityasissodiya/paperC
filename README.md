@@ -202,3 +202,72 @@ Spell out the rules; keep them small enough to reason about.
 * What if keys are stolen / signatures forged? (Out of scope; discuss mitigations and BFT extensions in Future Work.)
 
 ---
+
+# crdt-ac-sim — MATLAB simulation harness for CRDT + Access Control
+
+A minimal, reproducible repository to **simulate authorization on top of CRDT-replicated data**.
+It provides:
+- An **ACL timeline** (remove-wins) and **signed-op placeholder**.
+- A **materializer** that applies only **authorized** writes based on the ACL at the operation's causal time (here approximated by a scalar Lamport timestamp).
+- Canonical scenarios (T1–T3) and metrics.
+- Hooks to generate figures and extend with more CRDTs and scenarios.
+
+> Goal: After quiescence (all events delivered), **no unauthorized write survives** in the converged state.
+
+## Requirements
+- MATLAB R2021b+ (tested features are basic: structs, containers.Map, plotting).
+- No toolboxes required.
+
+## Quick start
+```bash
+# In MATLAB:
+scripts/run_all
+# or from shell:
+matlab -batch "scripts/run_all"
+```
+
+Outputs:
+- Metrics printed to console.
+- Final states saved to `out/` (create automatically).
+- Figures will be saved to `figs/` by plotting helpers (placeholders included).
+
+## Repository layout
+```
+src/
+  acl/                 % ACL events, authorization checks
+  crdt/                % Materialization rules for data (LWW registers etc.)
+  sim/                 % Scenario generators (T1–T3)
+  util/                % Helpers (Lamport clock, pretty printing)
+scripts/
+  run_all.m            % Run all scenarios, print metrics
+tests/
+  run_tests.m          % Basic assertions (unauthorized writes after convergence == 0)
+docs/
+  outline.md           % Paper outline + notes placeholders
+.github/workflows/
+  matlab.yml           % (Optional) CI template – requires MATLAB license token to run
+```
+
+## Scenarios included
+- **T1** Revocation vs concurrent write (revocation wins).
+- **T2** Partitioned revoke, later write by revoked user.
+- **T3** Write before grant (concurrent) — drop unauthorized.
+
+You can add more scenarios in `src/sim/` and register them in `scripts/run_all.m`.
+
+## GitHub setup
+```bash
+git init
+git add .
+git commit -m "init: CRDT+AC MATLAB simulation harness"
+git branch -M main
+git remote add origin <YOUR_GITHUB_REPO_URL>
+git push -u origin main
+```
+
+## CI (optional)
+This repo includes a GitHub Actions workflow (`.github/workflows/matlab.yml`) **commented out by default**.
+To enable, you must supply MATLAB on runners (see MathWorks `matlab-actions`). If you don't have that,
+run tests locally with:
+```bash
+matlab -batch "tests/run_tests"
